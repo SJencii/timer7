@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomodoro Timer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+      transition: background-color 0.5s ease, background-image 0.5s ease;
+      background-image: url('https://via.placeholder.com/1920x1080.png?text=Focus');
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+    }
+
+    .quote {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      font-style: italic;
+      opacity: 0.9;
+      max-width: 80%;
+      line-height: 1.5;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    .timer {
+      font-size: 6rem;
+      font-weight: bold;
+      margin: 20px 0;
+      text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.7);
+      animation: glow 1.5s infinite alternate;
+    }
+
+    @keyframes glow {
+      0% {
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+      }
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 20px;
+      margin: 10px;
+      border: none;
+      cursor: pointer;
+      border-radius: 10px;
+      background-color: #4CAF50;
+      color: white;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+      background-color: #45a049;
+      transform: scale(1.1);
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      font-size: 1.5rem;
+      margin: 20px 0;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <h1>Pomodoro Timer</h1>
+  <p class="quote" id="quote">"A focused fool can accomplish more than a distracted genius."</p>
+  <div class="timer" id="timer">25:00</div>
+  <button id="start">Start</button>
+  <button id="pause">Pause</button>
+  <button id="reset">Reset</button>
+  <p class="progress">Sessions Completed: <span id="sessionCount">0</span></p>
+
+  <audio id="tickSound" src="tick.mp3.wav" preload="auto"></audio>
+  <audio id="cheerSound" src="cheer.mp3.wav" preload="auto"></audio>
+
+  <footer>Stay focused and achieve your dreams!</footer>
+
+  <script>
+    let timerInterval;
+    let timeLeft = 25 * 60;
+    let isRunning = false;
+    let sessionCount = 0;
+    const motivationalQuotes = [
+      "A focused fool can accomplish more than a distracted genius.",
+      "Consistency is the key to mastery.",
+      "Small progress is still progress.",
+      "Discipline beats motivation every time.",
+      "The pain you feel today will be the strength you feel tomorrow.",
+      "Do something today that your future self will thank you for.",
+      "Hard work beats talent when talent doesn’t work hard.",
+      "Your only competition is who you were yesterday.",
+      "Focus on the process, not the results.",
+      "Distraction is the enemy of success."
+    ];
+
+    const body = document.body;
+    const timerDisplay = document.getElementById('timer');
+    const startButton = document.getElementById('start');
+    const pauseButton = document.getElementById('pause');
+    const resetButton = document.getElementById('reset');
+    const tickSound = document.getElementById('tickSound');
+    const cheerSound = document.getElementById('cheerSound');
+    const sessionCountDisplay = document.getElementById('sessionCount');
+    const quoteDisplay = document.getElementById('quote');
+
+    function updateTimerDisplay() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    function changeQuote() {
+      const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
+      quoteDisplay.textContent = motivationalQuotes[randomIndex];
+    }
+
+    function updateBackground() {
+      if (isRunning) {
+        body.style.backgroundImage = "url('https://via.placeholder.com/1920x1080.png?text=Focus')";
+      } else {
+        body.style.backgroundImage = "url('https://via.placeholder.com/1920x1080.png?text=Take+a+Break')";
+      }
+    }
+
+    function startTimer() {
+      if (isRunning) return;
+      isRunning = true;
+      updateBackground();
+
+      timerInterval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateTimerDisplay();
+          tickSound.currentTime = 0;
+          tickSound.play().catch(() => {});
+        } else {
+          clearInterval(timerInterval);
+          sessionCount++;
+          sessionCountDisplay.textContent = sessionCount;
+          cheerSound.currentTime = 0;
+          cheerSound.play().catch(() => {});
+          alert("Time is up! Take a short break.");
+          resetTimer();
+        }
+      }, 1000);
+    }
+
+    function togglePauseResume() {
+      if (isRunning) {
+        clearInterval(timerInterval);
+        tickSound.pause();
+        isRunning = false;
+        pauseButton.textContent = "Resume";
+      } else {
+        isRunning = true;
+        pauseButton.textContent = "Pause";
+        startTimer();
+      }
+    }
+
+    function resetTimer() {
+      isRunning = false;
+      clearInterval(timerInterval);
+      tickSound.pause();
+      timeLeft = 25 * 60;
+      updateTimerDisplay();
+      changeQuote();
+      updateBackground();
+      pauseButton.textContent = "Pause";
+    }
+
+    startButton.addEventListener('click', startTimer);
+    pauseButton.addEventListener('click', togglePauseResume);
+    resetButton.addEventListener('click', resetTimer);
+
+    updateTimerDisplay();
+    changeQuote();
+  </script>
+</body>
+</html>
